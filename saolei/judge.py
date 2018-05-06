@@ -15,6 +15,7 @@ souceName = "test.cpp"
 
 def creatTestData(path):
     f = open(path, "w")
+    f.write(str(size)+'\n')
     for i in range(size):
         for j in range(size):
             f.write("-2")
@@ -25,6 +26,7 @@ def creatTestData(path):
 def checkData(path):
     f = open(path, "r")
     inputData = f.readlines()
+    inputData = inputData[1:]
     if len(inputData) < size:
         return False
     global boomap
@@ -37,7 +39,6 @@ def checkData(path):
                 continue
             if (ord(j) < ord("0") or ord(j) > ord('9')):
                 if (j != '-'):
-                    print(j)
                     return False
             if (j == '-'):
                 y = -INF
@@ -66,7 +67,6 @@ def readAnsMap(path):
                 continue
             if (ord(j) < ord("0") or ord(j) > ord('9')):
                 if (j != '-'):
-                    print(j)
                     return False
             if (j == '-'):
                 y = -INF
@@ -140,12 +140,44 @@ def findZero(p, writePath):
             boomap[x][y] = ansmap[x][y]
     print(boomap)
     f = open(writePath, "w")
+    f.write(str(size)+'\n')
     for i in boomap:
         for j in i:
             f.write(str(j))
         f.write('\n')
     f.close
     return True
+
+
+def checkIsEnd():
+    for i in range(size):
+        for j in range(size):
+            if (boomap[i][j] == -2 and ansmap[i][j] != -1):
+                return False
+    return True
+
+
+def Draw():
+    import termcolor
+    import cProfile
+    print(" |", end='')
+    for i in range(size):
+        print(i, end=' ')
+    print()
+    print(" +", end='')
+    for i in range(size):
+        print("--", end='')
+    print()
+    for i in range(size):
+        print(i, end='|')
+        for j in range(size):
+            if (boomap[i][j] == -2):
+                termcolor.cprint("N", 'red',  end=' ')
+            elif boomap[i][j] == 0:
+                termcolor.cprint(" ", 'blue',  end=' ')
+            else:
+                termcolor.cprint(str(boomap[i][j]), 'blue',  end=' ')
+        print()
 
 
 if __name__ == '__main__':
@@ -157,16 +189,21 @@ if __name__ == '__main__':
     else:
         creatTestData(testDataPath)  # 没有，初始化
         checkData(testDataPath)
+    readAnsMap(ansPath)
+    if (checkIsEnd()):
+        print("Game is End and You win")
+        exit(0)
     call("g++ "+souceName+" -o 1", shell=True)
     call("./1"+" < "+testDataPath+" > "+outPath, shell=True)
-    readAnsMap(ansPath)
     out = checkBoom(outPath)
     if (out == False):
-        print("Test Program Wrong")
+        Draw()
+        print("The Point has been clicked")
         exit(0)
 
     if (not findZero(out, testDataPath)):
-        print("Died")
+        Draw()
+        print("Died,you find a boom")
         exit(0)
-
+    Draw()
     print("----------------")
