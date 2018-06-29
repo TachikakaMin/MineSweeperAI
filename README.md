@@ -22,7 +22,7 @@ Our final result is
 
 8 * 8/10(easy) : 0.5222 (10000 times,random testcases)
 
-16 * 16/40(mid) : 0.466 (1000 times,random testcases)
+16 * 16/40(mid) : 0.4803 (10000 times,random testcases)
 
 30 * 16/99(hard) : 0.102 (1000 times,random testcases)
 
