@@ -34,3 +34,5 @@ Speed
 
 30 * 16/99(hard) : 48.26s
   
+![b](https://user-images.githubusercontent.com/22492543/42081801-f98ae860-7bb8-11e8-8837-82ac4428dfbc.png)
+![c](https://user-images.githubusercontent.com/22492543/42081806-faf14aa0-7bb8-11e8-8886-05e19ab676e6.png)
