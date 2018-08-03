@@ -28,11 +28,14 @@ Our final result is (you can select a mine in the first step.)
 
 
 Our final result is (you can't select a mine in the first step.)
+
 8 * 8/10(easy) : 0.7523 (10000 times,random testcases)
 
 16 * 16/40(mid) : 0.7054 (10000 times,random testcases)
 
 30 * 16/99(hard) : 0.192 (1000 times,random testcases)
+
+
 
 
 Speed
