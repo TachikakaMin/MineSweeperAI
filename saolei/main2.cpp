@@ -5,6 +5,7 @@
 #include <cstring>
 #include <vector>
 #include <ctime>
+#include <cmath>
 #include <random>
 #include <queue>
 #include <set>
@@ -32,6 +33,7 @@ int sure0[MAXN][MAXN]; //sure0 推测一定不是雷的地方
 int is_Constrain[MAXN][MAXN]={0};//判断以这个点为中心的constrain是否加入
 int mine_Num;
 double p_mp[MAXN][MAXN]; //是雷的概率
+double qFunction[MAXN][MAXN]; //
 namespace CSPRandomMinesweeper{
 	const int TOT_RANDOM_NUM = 10000000;
 	struct Constrain
@@ -322,21 +324,23 @@ namespace CSPRandomMinesweeper{
 		for (int i=1;i<=n;i++)
 			for (int j=1;j<=m;j++)
 				if (mp[i][j]==NOT_SCAN) tot++;
+		double d2=0;
 		for (int i=1;i<=n;i++)
 			for (int j=1;j<=m;j++)
 				if (mp[i][j]==NOT_SCAN)
 				{
-					if (p_mp[i][j]<d) 
+					if (p_mp[i][j]<d || (p_mp[i][j]==d && qFunction[i][j]>d2)) 
 					{
 						d = p_mp[i][j];
+						d2 = qFunction[i][j];
 						x = i;y=j;
 						tot = 1;
 					}
-					if (p_mp[i][j]==d)
+					if (p_mp[i][j]==d && qFunction[i][j]==d2)
 					{
 						tot++;
 						bool b = rand()%tot;
-						if (b==0) {d = p_mp[i][j];x=i;y=j;}
+						if (b==0) {d = p_mp[i][j];x=i;y=j; d2 = qFunction[i][j];}
 					}
 				}
 		mp[x][y]=ans[x][y];
@@ -404,11 +408,8 @@ namespace CSPRandomMinesweeper{
 		}
 		return 0;
 	}
-// ---------------------------------------------------------------------
-// 
-// 
-// 
-// 
+		// ---------------------------------------------------------------------
+
 
 	bool is_Connect(int x,int y) //判断两个constrain是否有公共元素
 	{
@@ -512,10 +513,11 @@ namespace CSPRandomMinesweeper{
 		for (int i=1;i<=n;i++)
 			for (int j=1;j<=m;j++) if (sure1[i][j]) have_found++;
 		get_Pro_legal = 1;
-		get_Pro_tot = (long long)1<<(long long)min((int)v.size(),17);
+		int n_2f = 15;
+		get_Pro_tot = (long long)1<<(long long)(min((int)v.size(),n_2f)+1);
 		vector<long long> cnt1;
 		for (int j=0;j<v.size();j++) cnt1.push_back(0);
-		if (v.size()>17)
+		if (v.size()>n_2f)
 		{
 			for (long long i=0;i<get_Pro_tot;i++)
 			{
@@ -533,13 +535,13 @@ namespace CSPRandomMinesweeper{
 						cnt1[j]+=pro_mp[v[j]];
 				}
 				// printf("\r%lld/%lld",i,get_Pro_tot);
-	   //      	fflush(stdout);
+	   			//      	fflush(stdout);
 			}
 			for (int i=0;i<v.size();i++)
 			{
 				int x=v[i].first;
 				int y=v[i].second;
-				p_mp[x][y] = (double)cnt1[i]/get_Pro_legal;
+				p_mp[x][y] = min(p_mp[x][y],(double)(cnt1[i]+1)/(get_Pro_legal+v.size()));
 			}
 			return ;
 		}
@@ -561,7 +563,7 @@ namespace CSPRandomMinesweeper{
 					cnt1[j]+=pro_mp[v[j]];
 			}
 			// printf("\r%lld/%lld",i,get_Pro_tot);
-   //      	fflush(stdout);
+   			//      	fflush(stdout);
 		}
 		for (int i=0;i<v.size();i++)
 		{
@@ -584,14 +586,99 @@ namespace CSPRandomMinesweeper{
 			}
 	}
 
-	int main1()
+	double cal_Q_Funtion(int ix,int iy)
+	{
+		int cal_Q_tot=(1<<9);
+		int cal_Q_m[9]={0};
+		int fz[9] = {0};
+		map<pair<int,int>, int > qp;
+		for (int i=0;i<cal_Q_tot;i++)
+		{
+			int cal_x = i,cal_cnt=0;
+			cal_Q_m[8]=0;
+			for (int j=0;j<8;j++)
+			{
+				if (cal_x%2==1) cal_Q_m[j]=MINE,cal_cnt++;
+					else cal_Q_m[j] = 0 ;
+				cal_x/=2;
+			}
+			for (int j=0;j<8;j++)
+			{
+				if (ix+dx[j]>n || ix+dx[j]<1 || iy+dy[j]>m ||iy+dy[j]<1) continue;
+				if (mp[ix+dx[j]][iy+dy[j]]==NOT_SCAN) 
+				{
+					qp[make_pair(ix+dx[j],iy+dy[j])] = cal_Q_m[j];
+					if (cal_Q_m[j] == MINE) cal_Q_m[8]++;
+				}
+				else if (mp[ix+dx[j]][iy+dy[j]]==MINE) cal_Q_m[8]++;
+			}
+
+			bool cal_Q_b = 1;
+			for (int j = ix-2;j<=ix+2;j++)
+				for (int k = iy-2;k <= iy+2;k++)
+				{
+					if (mp[j][k] == MINE) continue;
+					if (mp[j][k] != NOT_SCAN )
+					{
+						int op = 0;
+						for (int o=0;o<8;o++)
+						{
+							auto search = qp.find(make_pair(i+dx[o],k+dy[o]));
+							if (mp[i+dx[o]][k+dy[o]] == MINE) op++;
+							else 
+							{
+								if(search != qp.end())
+									if (qp[make_pair(i+dx[o],k+dy[o])]==MINE) op++;
+							}
+						}
+						if (op>mp[j][k]) cal_Q_b = 0;
+					}
+				}
+			if (cal_Q_b) fz[cal_cnt]++;
+		}
+		double ans = 0 ;
+		for (int i=0;i<8;i++) 
+		{
+			double o = (double)fz[i]/(cal_Q_tot-1);
+			ans += o*log(o)/log(2);
+		}
+		return -ans;
+	}
+
+	void q_Function() //信息熵函数
+	{
+		for (int i=1;i<=n;i++)
+			for (int j=1;j<=m;j++)
+				qFunction[i][j]=0;
+		for (int i=1;i<=n;i++)
+			for (int j=1;j<=m;j++)
+				if (mp[i][j]==NOT_SCAN)
+					qFunction[i][j] = cal_Q_Funtion(i,j);
+	}
+
+	void debug_qFuntion()
+	{
+		for (int i=1;i<=n;i++)
+		{
+			for (int j=1;j<=m;j++)
+				printf("%.4lf ",qFunction[i][j]);
+			printf("\n");
+		}
+		printf("-----------------------\n");
+	}
+
+	int main1(int & _b)
 	{
 		init();
+		if (ans[1][1]==MINE) return 1;
+		mp[1][1]=ans[1][1];
+		update();
 		while (1)
 		{
-			// printf("---------------------\n");
+			//printf("---------------------\n");
 			// print_Constrain();
-			// debug_Print();
+			//debug_Print();
+			_b++;
 			if (check_Game_Is_End()==1) return 0;
 			check_Constrain(); //逻辑推断
 			if (check_Certain())
@@ -606,6 +693,8 @@ namespace CSPRandomMinesweeper{
 			// debug_v_set();
 			initial_P_MP();
 			sample();
+			q_Function();
+			//debug_qFuntion();
 			// debug_P_MP_Print();
 			// 
 			if (choose()==0) return 1; //选择新点
@@ -619,8 +708,6 @@ namespace RandomData{
 	vector<int> q;
 	int main1()
 	{
-		n=30,m=16;
-		mine_Num = 99;
 		for (int i=0;i<=n+1;i++)
 			for (int j=0;j<=m+1;j++) ans[i][j]=0;
 		q.clear();
@@ -653,23 +740,36 @@ namespace RandomData{
 	}
 }
 
+
 int main(int argc, char const *argv[])
 {
-	int cnt1=0,t_o_t=1000;
+	int cnt1=0,cnt2=0,t_o_t=1000;
 	srand((unsigned int)time(NULL));
-	// #pragma omp parallel for reduction(+:cnt1)
 	for (int i=1;i<=t_o_t;i++)
 	{
 		// freopen("t_e_s_t.in","w",stdout);
+		int _b=0;
+		n=8;
+		m=8;
+		mine_Num=10;
 		RandomData::main1();
 		// freopen ("/dev/tty", "a", stdout);
 		// printf("2333\n");
 		// freopen("t_e_s_t.in","r",stdin);
-		if (CSPRandomMinesweeper::main1()==0) cnt1++;
+		if (CSPRandomMinesweeper::main1(_b)==0) 
+			{
+				cnt1++;
+			}
+		if (_b>=2) 
+			{
+				cnt2++;
+			}
 			// else cnt1=0;
 		// freopen ("/dev/tty", "a", stdin);
 	}
-	printf("%lf\n",(double)cnt1/t_o_t);
+	// #pragma omp parallel for reduction(+:cnt1,cnt2)
+	if (cnt2==0) {printf("Try again\n");return 0;}
+	printf("%d %d %lf\n",cnt1,cnt2,(double)cnt1/cnt2);
 	return 0;
 }
 
