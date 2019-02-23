@@ -30,21 +30,51 @@ int mp[MAXN][MAXN],n,m; //mp 看见的局面
 int ans[MAXN][MAXN]; //testcase的答案
 int sure1[MAXN][MAXN]; //sure1 推测一定是雷的地方
 int sure0[MAXN][MAXN]; //sure0 推测一定不是雷的地方
-int is_Constrain[MAXN][MAXN]={0};//判断以这个点为中心的constrain是否加入
+int is_Constraint[MAXN][MAXN]={0};//判断以这个点为中心的constraint是否加入
 int mine_Num;
 double p_mp[MAXN][MAXN]; //是雷的概率
 double qFunction[MAXN][MAXN]; //
+
+namespace Training_Data_Recorde{
+
+	void save_Training_Data(int i)
+	{
+		string file_name = "training_data"+to_string(i)+".csv";
+		freopen(file_name,"w+",stdout);
+		for (int i=1;i<=n;i++)
+			for (int j=1;j<=m;j++) 
+				printf("%d,",mp[i][j]);
+		printf("\n");
+		fclose(stdout);
+	}
+
+	void save_Training_Data_Ans(int i)
+	{
+		string file_name = "training_data_ans"+to_string(i)+".csv";
+		freopen(file_name,"w",stdout);
+		for (int i=1;i<=n;i++)
+			for (int j=1;j<=m;j++) 
+				printf("%d,",mp[i][j]);
+		printf("\n");
+		fclose(stdout);
+	}
+
+}
+
+
+
+
 namespace CSPRandomMinesweeper{
 	const int TOT_RANDOM_NUM = 10000000;
-	struct Constrain
+	struct Constraint
 	{	
 		vector<pair<int,int> > p; //等式左边元素,x,y坐标
 		int v; //等式右边
 	};
-	vector<Constrain> all_Constrain;
+	vector<Constraint> all_Constraint;
 	vector<set<pair<int,int> > > v_set;
 	vector<vector<int> > v_num;
-	vector<int> type_Constrain;
+	vector<int> type_Constraint;
 	map<pair<int,int>,int> pro_mp;
 	long long get_Pro_tot;
 	int have_found=0;
@@ -76,55 +106,55 @@ namespace CSPRandomMinesweeper{
 	}
 
 
-	void update() //把新的constrain加入到序列中
+	void update() //把新的constraint加入到序列中
 	{
 		for (int i=1;i<=n;i++)
 			for (int j=1;j<=m;j++)
 				if (mp[i][j]!=NOT_SCAN)
-					if (!is_Constrain[i][j])
+					if (!is_Constraint[i][j])
 					{
-						is_Constrain[i][j]=1;
-						Constrain new_Constrain;
+						is_Constraint[i][j]=1;
+						Constraint new_Constraint;
 						for (int k=0;k<8;k++)
-							new_Constrain.p.push_back(make_pair(i+dx[k],j+dy[k]));
-						new_Constrain.v = mp[i][j];
-						all_Constrain.push_back(new_Constrain);
-						Constrain new_Constrain2;
-						new_Constrain2.v = 0;
-						new_Constrain2.p.push_back(make_pair(i,j));
-						all_Constrain.push_back(new_Constrain2);
+							new_Constraint.p.push_back(make_pair(i+dx[k],j+dy[k]));
+						new_Constraint.v = mp[i][j];
+						all_Constraint.push_back(new_Constraint);
+						Constraint new_Constraint2;
+						new_Constraint2.v = 0;
+						new_Constraint2.p.push_back(make_pair(i,j));
+						all_Constraint.push_back(new_Constraint2);
 					}
 	}
 
-	void set_bound() //设置边界上的constrain
+	void set_bound() //设置边界上的constraint
 	{
 		for (int i=0;i<=n+1;i++)
 		{
-			Constrain test;
+			Constraint test;
 			test.v = 0;
 			test.p.push_back(make_pair(i,0));
-			all_Constrain.push_back(test);
+			all_Constraint.push_back(test);
 		}
 		for (int i=1;i<=m+1;i++)
 		{
-			Constrain test;
+			Constraint test;
 			test.v = 0;
 			test.p.push_back(make_pair(0,i));
-			all_Constrain.push_back(test);
+			all_Constraint.push_back(test);
 		}
 		for (int i=1;i<=n+1;i++)
 		{
-			Constrain test;
+			Constraint test;
 			test.v = 0;
 			test.p.push_back(make_pair(i,m+1));
-			all_Constrain.push_back(test);
+			all_Constraint.push_back(test);
 		}
 		for (int i=1;i<=m;i++)
 		{
-			Constrain test;
+			Constraint test;
 			test.v = 0;
 			test.p.push_back(make_pair(n+1,i));
-			all_Constrain.push_back(test);
+			all_Constraint.push_back(test);
 		}
 	}
 
@@ -134,12 +164,12 @@ namespace CSPRandomMinesweeper{
 		for (int i=0;i<=n+1;i++)
 			for (int j=0;j<=m+1;j++)
 			{
-				mp[i][j]=sure1[i][j]=sure0[i][j]=is_Constrain[i][j]=0;
+				mp[i][j]=sure1[i][j]=sure0[i][j]=is_Constraint[i][j]=0;
 				p_mp[i][j]=0;
-				all_Constrain.clear();
+				all_Constraint.clear();
 				v_set.clear();
 				v_num.clear();
-				type_Constrain.clear();
+				type_Constraint.clear();
 				pro_mp.clear();
 				have_found=0;
 				get_Pro_tot=0;
@@ -165,16 +195,16 @@ namespace CSPRandomMinesweeper{
 		}
 	}
 
-	bool can_Reduce(int x,int y)  //判断两个constrain是否能相消
+	bool can_Reduce(int x,int y)  //判断两个constraint是否能相消
 	{
-		Constrain a = all_Constrain[x];
-		Constrain b = all_Constrain[y];
+		Constraint a = all_Constraint[x];
+		Constraint b = all_Constraint[y];
 		if (a.p.size()==b.p.size()) return 0;
 		bool switch_ab = 0;
 		if (a.p.size()>b.p.size()) swap(a,b),switch_ab = 1;
 		sort(a.p.begin(), a.p.end());
 		sort(b.p.begin(), b.p.end());
-		Constrain ans;
+		Constraint ans;
 		ans.v = b.v - a.v;
 		int cnt=0;
 		int i=0;
@@ -185,50 +215,50 @@ namespace CSPRandomMinesweeper{
 		while (i<b.p.size())
 			ans.p.push_back(b.p[i]),i++;
 		if (ans.p.size()!=b.p.size()-a.p.size()) return 0;
-		if (!switch_ab) all_Constrain[y] = ans;
-			else all_Constrain[x] = ans;
+		if (!switch_ab) all_Constraint[y] = ans;
+			else all_Constraint[x] = ans;
 		return 1;
 	}
 
 	void if_All_Mine(int i) //碰到 x+y+z=3 变成 x=1 y=1 z=1
 	{
-		for (int j = 1;j<all_Constrain[i].p.size();j++)
+		for (int j = 1;j<all_Constraint[i].p.size();j++)
 		{
-			Constrain test;
+			Constraint test;
 			test.v = 1;
-			test.p.push_back(all_Constrain[i].p[j]);
-			all_Constrain.push_back(test);
+			test.p.push_back(all_Constraint[i].p[j]);
+			all_Constraint.push_back(test);
 		}
-		Constrain test;
+		Constraint test;
 		test.v = 1;
-		test.p.push_back(all_Constrain[i].p[0]);
-		all_Constrain[i] = test;
+		test.p.push_back(all_Constraint[i].p[0]);
+		all_Constraint[i] = test;
 	}
 
 	void if_All_Not_Mine(int i) //碰到 x+y+z=0 变成 x=0 y=0 z=0
 	{
-		for (int j = 1;j<all_Constrain[i].p.size();j++)
+		for (int j = 1;j<all_Constraint[i].p.size();j++)
 		{
-			Constrain test;
+			Constraint test;
 			test.v = 0;
-			test.p.push_back(all_Constrain[i].p[j]);
-			all_Constrain.push_back(test);
+			test.p.push_back(all_Constraint[i].p[j]);
+			all_Constraint.push_back(test);
 		}
-		Constrain test;
+		Constraint test;
 		test.v = 0;
-		test.p.push_back(all_Constrain[i].p[0]);
-		all_Constrain[i] = test;
+		test.p.push_back(all_Constraint[i].p[0]);
+		all_Constraint[i] = test;
 	}
 
 	bool divide() // 分解x+y+z=3 x+y+z=0
 	{
-		int len = all_Constrain.size();
+		int len = all_Constraint.size();
 		bool b=0;
 		for (int i=0;i<len;i++)
 		{
-			if (all_Constrain[i].p.size()==all_Constrain[i].v && all_Constrain[i].v>1)
+			if (all_Constraint[i].p.size()==all_Constraint[i].v && all_Constraint[i].v>1)
 				if_All_Mine(i),b=1;
-			if (all_Constrain[i].v == 0 && all_Constrain[i].p.size()>1)
+			if (all_Constraint[i].v == 0 && all_Constraint[i].p.size()>1)
 				if_All_Not_Mine(i),b=1;
 		}
 		return b;
@@ -236,14 +266,14 @@ namespace CSPRandomMinesweeper{
 
 	void sure()//把确定的点加入sure0 sure1
 	{
-		int len = all_Constrain.size();
+		int len = all_Constraint.size();
 		for (int i=0;i<len;i++)
-			if (all_Constrain[i].p.size()==1)
+			if (all_Constraint[i].p.size()==1)
 			{
 				int x,y;
-				x = all_Constrain[i].p[0].first;
-				y = all_Constrain[i].p[0].second;
-				if (all_Constrain[i].v == 0)
+				x = all_Constraint[i].p[0].first;
+				y = all_Constraint[i].p[0].second;
+				if (all_Constraint[i].v == 0)
 					sure0[x][y]=1;
 				else sure1[x][y]=1;
 			}
@@ -251,6 +281,8 @@ namespace CSPRandomMinesweeper{
 			for (int j=1;j<=m;j++)
 				if (mp[i][j]!=MINE && mp[i][j]!=NOT_SCAN) sure0[i][j]=1;
 	}
+
+
 	void debug_P_MP_Print()
 	{
 		printf("\n");
@@ -261,12 +293,14 @@ namespace CSPRandomMinesweeper{
 			printf("\n");
 		}
 	}
-	void check_Constrain() //检查是否有constrain能推断的
+
+
+	void check_Constraint() //检查是否有constraint能推断的
 	{
 		int len;
 		while (1)
 		{
-			len = all_Constrain.size();
+			len = all_Constraint.size();
 			bool b=0;
 			for (int i=0;i<len;i++)
 				for (int j=i+1;j<len;j++)
@@ -277,14 +311,14 @@ namespace CSPRandomMinesweeper{
 		sure();
 	}
 
-	void print_Constrain() //打印constrain信息
+	void print_Constraint() //打印constraint信息
 	{
-		for (int i=0;i<all_Constrain.size();i++)
+		for (int i=0;i<all_Constraint.size();i++)
 		{
 			printf("%d\n",i);
-			for (int j=0;j<all_Constrain[i].p.size();j++)
-				printf("(%d,%d) ",all_Constrain[i].p[j].first,all_Constrain[i].p[j].second);
-			printf("%d\n",all_Constrain[i].v);
+			for (int j=0;j<all_Constraint[i].p.size();j++)
+				printf("(%d,%d) ",all_Constraint[i].p[j].first,all_Constraint[i].p[j].second);
+			printf("%d\n",all_Constraint[i].v);
 		}
 	}
 
@@ -411,10 +445,10 @@ namespace CSPRandomMinesweeper{
 		// ---------------------------------------------------------------------
 
 
-	bool is_Connect(int x,int y) //判断两个constrain是否有公共元素
+	bool is_Connect(int x,int y) //判断两个constraint是否有公共元素
 	{
-		Constrain a = all_Constrain[x];
-		Constrain b = all_Constrain[y];
+		Constraint a = all_Constraint[x];
+		Constraint b = all_Constraint[y];
 		for (int i=0;i<a.p.size();i++)
 			for (int j=0;j<b.p.size();j++)
 				if (a.p[i]==b.p[j]) return 1;
@@ -423,41 +457,41 @@ namespace CSPRandomMinesweeper{
 
 	int find_Fa(int x) //并查集
 	{
-		if (type_Constrain[x]!=x) type_Constrain[x]=find_Fa(type_Constrain[x]);
-		return type_Constrain[x];
+		if (type_Constraint[x]!=x) type_Constraint[x]=find_Fa(type_Constraint[x]);
+		return type_Constraint[x];
 	}
 
-	void conbine_Constrain(int a,int b) //合并并查集
+	void conbine_Constraint(int a,int b) //合并并查集
 	{
 		int x = find_Fa(a),y=find_Fa(b);
-		type_Constrain[x]=y;
+		type_Constraint[x]=y;
 	}
 
-	void debug_type_Constrain()
+	void debug_type_Constraint()
 	{
-		int len = all_Constrain.size();
+		int len = all_Constraint.size();
 		for (int i=0;i<len;i++)
-			if (type_Constrain[i]!=i)
-				printf("%d %d\n",i,type_Constrain[i]);
+			if (type_Constraint[i]!=i)
+				printf("%d %d\n",i,type_Constraint[i]);
 		printf("\n");
 	}
 
-	void combine_Group() //将有所有公共元素的constrain的并查集合并
+	void combine_Group() //将有所有公共元素的constraint的并查集合并
 	{
-		int len = all_Constrain.size();
-		type_Constrain.clear();
+		int len = all_Constraint.size();
+		type_Constraint.clear();
 		for (int i=0;i<len;i++) //并查集初始化
-			type_Constrain.push_back(i);
+			type_Constraint.push_back(i);
 		for (int i=0;i<len;i++)
 			for (int j=i+1;j<len;j++)
-				if (all_Constrain[i].p.size()!=1 && all_Constrain[j].p.size()!=1)
-					if (is_Connect(i,j)) conbine_Constrain(i,j);
+				if (all_Constraint[i].p.size()!=1 && all_Constraint[j].p.size()!=1)
+					if (is_Connect(i,j)) conbine_Constraint(i,j);
 	}
 
 
 	void find_Mine_Group() //对每个group sample他们雷的可能数
 	{
-		int len = all_Constrain.size();
+		int len = all_Constraint.size();
 		for (int i=0;i<len;i++) find_Fa(i);
 		v_set.clear();v_num.clear();
 		for (int i=0;i<len;i++) 
@@ -469,14 +503,14 @@ namespace CSPRandomMinesweeper{
 		}
 		for (int i=0;i<len;i++)
 		{
-			if (all_Constrain[i].p.size()==1) continue;
-			if (type_Constrain[i]!=i) continue;
+			if (all_Constraint[i].p.size()==1) continue;
+			if (type_Constraint[i]!=i) continue;
 			for (int j=0;j<len;j++)
-				if (type_Constrain[j]==i) 
+				if (type_Constraint[j]==i) 
 				{
-					for (int k=0;k<all_Constrain[j].p.size();k++)
+					for (int k=0;k<all_Constraint[j].p.size();k++)
 					{
-						v_set[i].insert(all_Constrain[j].p[k]);
+						v_set[i].insert(all_Constraint[j].p[k]);
 						v_num[i].push_back(j);
 					}
 				}
@@ -500,9 +534,9 @@ namespace CSPRandomMinesweeper{
 		{
 			int o = v_num[id][i];
 			int x=0;
-			for (int k=0;k<all_Constrain[i].p.size();k++)
-				x+=pro_mp[all_Constrain[i].p[k]];
-			if (x!=all_Constrain[i].v) return 0;
+			for (int k=0;k<all_Constraint[i].p.size();k++)
+				x+=pro_mp[all_Constraint[i].p[k]];
+			if (x!=all_Constraint[i].v) return 0;
 		}
 		return 1;
 	}
@@ -676,11 +710,11 @@ namespace CSPRandomMinesweeper{
 		while (1)
 		{
 			//printf("---------------------\n");
-			// print_Constrain();
+			// print_Constraint();
 			//debug_Print();
 			_b++;
 			if (check_Game_Is_End()==1) return 0;
-			check_Constrain(); //逻辑推断
+			check_Constraint(); //逻辑推断
 			if (check_Certain())
 			{
 				if (choose()==0) return 1;
@@ -689,7 +723,7 @@ namespace CSPRandomMinesweeper{
 			}
 			combine_Group();
 			find_Mine_Group();
-			// debug_type_Constrain();
+			// debug_type_Constraint();
 			// debug_v_set();
 			initial_P_MP();
 			sample();
